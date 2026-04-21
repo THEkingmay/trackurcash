@@ -5,7 +5,7 @@ import React from "react"
 import { verifyLogin } from "../action"
 import Button from "@/src/components/Button"
 import Link from "next/link"
-
+import Image from "next/image"
 export default function VerifyEmailLogin() {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -32,7 +32,7 @@ export default function VerifyEmailLogin() {
         try {
             await verifyLogin({ loginId: loginId as string, code })
             toast.success("ยืนยันตัวตนสำเร็จ")
-            router.push("/dashboard") // เปลี่ยนเส้นทางไปยังหน้า Dashboard หลังจากยืนยันตัวตนสำเร็จ
+            router.refresh() // ให้ middleware ทำงานใหม่เพื่อโหลดข้อมูลผู้ใช้ที่เพิ่งล็อกอินเข้ามา
         } catch (err) {
             toast.error((err as Error).message || "เกิดข้อผิดพลาดในการยืนยันตัวตน")
         } finally {
@@ -51,6 +51,16 @@ export default function VerifyEmailLogin() {
         <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-[var(--background)] text-[var(--foreground)]">
 
             <div className="w-full max-w-md p-8 rounded-2xl shadow-sm border border-[var(--border)] bg-[var(--surface)]">
+                <div className="flex justify-center mb-5">
+                    <div className="border rounded-full p-6 bg-[var(--surface-secondary)] border-[var(--border)]">
+                        <Image
+                            src="/img01.jpg"
+                            alt="Login"
+                            width={100}
+                            height={100}
+                        />
+                    </div>
+                </div>
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold tracking-tight">ยืนยันตัวตน</h1>
                     <p className="text-[var(--muted)] mt-2 text-sm">

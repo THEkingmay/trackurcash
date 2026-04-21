@@ -6,6 +6,7 @@ import { setData, getData, deleteData } from "@/src/libs/redis.lib"
 import { sendEmail } from "@/src/libs/mail.lib"
 import { generateToken } from "@/src/libs/token.lib"
 import { cookies } from "next/headers"
+
 // รับอีเมลเข้ามา จากนั้นสุ่มสร้างไอดีสำหรับการล็อกอิน พร้อมสร้างรหัส 6 หลักสำหรับการยืนยันตัวตน
 // บันทึกข้อมูบลโดยใช้ไอดีการล็อกอินเป็นคีย์คู่กับ อีเมลและรหัสยืนยันตัวตนลงใน redis
 // มีเวลาให้แค่ 5 นาทีในการยืนยันตัวตน หลังจากนั้นข้อมูลจะถูกลบออกจาก redis
@@ -74,7 +75,7 @@ export async function verifyLogin({ loginId, code }: { loginId: string, code: st
             value: token,
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            maxAge: 60 * 60 * 24 * 7, // 7 วัน
+            maxAge: 60 * 60 * 24 * 5, // 5 วัน
         })
 
         // ลบข้อมูลจาก redis หลังจากยืนยันตัวตนสำเร็จ

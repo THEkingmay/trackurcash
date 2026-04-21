@@ -3,7 +3,9 @@ import Button from "@/src/components/Button"
 import toast from "react-hot-toast"
 import { submitEmailToLogin } from "../action"
 import React from "react"
-import { useRouter } from "next/navigation" // ใช้ useRouter ของ Next.js
+import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
+import Image from "next/image"
 
 export default function LoginMain() {
     const [email, setEmail] = React.useState("")
@@ -30,14 +32,23 @@ export default function LoginMain() {
     }
 
     const handleGoogleLogin = () => {
-        // TODO: รอไปเชื่อมต่อกับ Auth Provider (เช่น NextAuth หรือ Supabase)
-        toast("กำลังพัฒนาระบบล็อกอินด้วย Google...", { icon: '🛠️' })
+        signIn("google", { callbackUrl: "/api/auth/custom-token" })
     }
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md p-8 rounded-2xl shadow-sm border border-[var(--border)] bg-[var(--surface)]">
 
+            <div className="w-full max-w-md p-8 rounded-2xl shadow-md border border-[var(--border)] bg-[var(--surface)]">
+                <div className="flex justify-center mb-5">
+                    <div className="border rounded-full p-6 bg-[var(--surface-secondary)] border-[var(--border)]">
+                        <Image
+                            src="/img01.jpg"
+                            alt="Login"
+                            width={100}
+                            height={100}
+                        />
+                    </div>
+                </div>
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold tracking-tight">เข้าสู่ระบบ</h1>
                     <p className="text-[var(--muted)] mt-2 text-sm">กรอกอีเมลของคุณเพื่อเข้าสู่ระบบ</p>

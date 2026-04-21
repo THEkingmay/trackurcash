@@ -1,102 +1,239 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { logout } from "../features/login/action";
-import { Menu, X, LogOut } from "lucide-react";
+import { LogOut, Menu, X, User, ChevronDown, Home, ChartAreaIcon } from "lucide-react";
+import { useAuth } from "@/src/hooks/auth/AuthProvider";
+import Image from "next/image";
 
 const PATHS = [
-    { name: "หน้าแรก", path: "/dashboard" },
-    { name: "สรุปผล", path: "/dashboard/summary" },
-    { name: "ข้อมูลส่วนตัว", path: "/dashboard/profile" },
+    { name: "หน้าแรก", path: "/dashboard", icon: Home },
+    { name: "สรุปผล", path: "/dashboard/summary", icon: ChartAreaIcon },
+    { name: "ข้อมูลส่วนตัว", path: "/dashboard/profile", icon: User },
 ];
 
-export default function Navbar() {
-    const pathname = usePathname();
-    const router = useRouter();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+function NavSkeleton() {
+    return (
+        <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--surface)]/90 backdrop-blur-md">
+            <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
+                <div className="h-4 w-32 rounded-full bg-[var(--foreground)]/8 animate-pulse" />
 
-    const handleLogout = async () => {
-        await logout();
-        router.push("/login");
-        router.refresh();
-    };
+                <div className="hidden md:flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-full bg-[var(--foreground)]/8 animate-pulse" />
+                    <div className="h-3 w-16 rounded-full bg-[var(--foreground)]/8 animate-pulse" />
+                </div>
+                <div className="md:hidden h-8 w-8 rounded-md bg-[var(--foreground)]/8 animate-pulse" />
+            </div>
+        </header>
+    );
+}
+
+function AvatarImage({ name, image }: { name?: string | null; image?: string | null }) {
+    const [imgError, setImgError] = useState(false);
+
+    if (image && !imgError) {
+        return (
+            <img
+                src={image}
+                alt={name ?? "User"}
+                onError={() => setImgError(true)}
+                className="h-7 w-7 rounded-full object-cover"
+            />
+        );
+    }
+
+    const initials = name
+        ? name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+        : null;
+
+    if (initials) {
+        return (
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--foreground)]/10 text-[10px] font-semibold tracking-wide text-[var(--foreground)]">
+                {initials}
+            </span>
+        );
+    }
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--surface)]/80 backdrop-blur-md">
-            <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--foreground)]/10 text-[var(--muted)]">
+            <User size={14} />
+        </span>
+    );
+}
 
-                {/* Desktop Navigation (ซ่อนในมือถือ แสดงตอนจอขนาด md ขึ้นไป) */}
-                <nav className="hidden md:flex items-center gap-1">
-                    {PATHS.map((item) => {
-                        const isActive = pathname === item.path;
-                        return (
-                            <Link
-                                key={item.path}
-                                href={item.path}
-                                aria-current={isActive ? "page" : undefined}
-                                className={`px-4 py-2 rounded-md text-sm transition-all duration-200 ${isActive
-                                    ? "bg-[var(--foreground)]/10 text-[var(--foreground)] font-semibold"
-                                    : "text-[var(--muted)] hover:bg-[var(--foreground)]/5 hover:text-[var(--foreground)]"
-                                    }`}
-                            >
-                                {item.name}
-                            </Link>
-                        );
-                    })}
-                </nav>
+function AvatarDropdown({ user, onLogout }: {
+    user: { name?: string | null; email: string; image?: string | null };
+    onLogout: () => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const pathname = usePathname();
 
-                {/* Desktop Logout Button */}
-                <div className="hidden md:flex items-center">
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10 rounded-md transition-colors duration-200"
-                    >
-                        <LogOut size={16} />
-                        ออกจากระบบ
-                    </button>
-                </div>
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-                {/* Mobile Menu Toggle Button */}
-                <button
-                    className="md:hidden p-2 text-[var(--foreground)] hover:bg-[var(--foreground)]/10 rounded-md transition-colors"
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    aria-label="Toggle menu"
-                >
-                    {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                </button>
-            </div>
+    return (
+        <div ref={ref} className="relative">
+            <button
+                onClick={() => setOpen(!open)}
+                className="flex items-center gap-1.5 rounded-md px-2 py-1.5 hover:bg-[var(--foreground)]/5 transition-colors duration-150"
+            >
+                <span className="ring-1 ring-[var(--border)] rounded-full">
+                    <AvatarImage name={user.name} image={user.image} />
+                </span>
+                <span className="text-xs text-[var(--muted)] max-w-[100px] truncate hidden lg:block">
+                    {user.name ?? user.email}
+                </span>
+                <ChevronDown
+                    size={12}
+                    className={`text-[var(--muted)] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                />
+            </button>
 
-            {/* Mobile Navigation Dropdown */}
-            {isMobileMenuOpen && (
-                <div className="md:hidden border-t border-[var(--border)] bg-[var(--surface)] px-4 py-4 shadow-lg animate-in slide-in-from-top-2">
-                    <nav className="flex flex-col gap-2">
+            {open && (
+                <div className="absolute right-0 top-full mt-1.5 w-52 rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg shadow-black/5 py-1 z-50">
+                    <div className="px-3 py-2.5 border-b border-[var(--border)]">
+                        {user.name && (
+                            <p className="text-xs font-medium text-[var(--foreground)] truncate">{user.name}</p>
+                        )}
+                        <p className="text-[11px] text-[var(--muted)] truncate">{user.email}</p>
+                    </div>
+
+                    <div className="py-1">
                         {PATHS.map((item) => {
                             const isActive = pathname === item.path;
                             return (
                                 <Link
                                     key={item.path}
                                     href={item.path}
-                                    onClick={() => setIsMobileMenuOpen(false)} // ปิดเมนูเมื่อกดเปลี่ยนหน้า
-                                    className={`px-4 py-3 rounded-md text-sm transition-colors duration-200 ${isActive
-                                        ? "bg-[var(--foreground)]/10 text-[var(--foreground)] font-semibold"
-                                        : "text-[var(--muted)] hover:bg-[var(--foreground)]/5 hover:text-[var(--foreground)]"
+                                    onClick={() => setOpen(false)}
+                                    className={`flex items-center gap-2 px-3 py-2 text-xs transition-colors duration-150 ${isActive
+                                        ? "bg-[var(--foreground)]/8 text-[var(--foreground)] font-medium"
+                                        : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5"
+                                        }`}
+                                >
+                                    <item.icon size={12} />
+                                    {item.name}
+                                </Link>
+                            );
+                        })}
+                    </div>
+
+                    <div className="border-t border-[var(--border)] py-1">
+                        <button
+                            onClick={() => { setOpen(false); onLogout(); }}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-500/8 transition-colors duration-150"
+                        >
+                            <LogOut size={13} />
+                            ออกจากระบบ
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default function Navbar() {
+    const pathname = usePathname();
+    const router = useRouter();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { loading, user } = useAuth();
+
+    const handleLogout = async () => {
+        setIsMobileMenuOpen(false);
+        await logout();
+        router.push("/auth");
+        router.refresh();
+    };
+
+    if (loading) return <NavSkeleton />;
+
+    return (
+        <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--surface)]/90 backdrop-blur-md">
+            <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
+
+                <Link
+                    href="/dashboard"
+                    className="text-sm font-semibold tracking-tight text-[var(--foreground)] transition-opacity hover:opacity-70"
+                >
+                    <div className="flex items-center gap-2">
+                        <Image
+                            src={'/img02.png'}
+                            alt="Logo"
+                            width={50}
+                            height={50}
+                        />
+                        <span>Track Your Cash</span>
+                    </div>
+                </Link>
+
+                <div className="hidden md:flex items-center">
+                    {user && <AvatarDropdown user={user} onLogout={handleLogout} />}
+                </div>
+
+                <button
+                    className="md:hidden flex items-center justify-center h-8 w-8 rounded-md text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/8 transition-all duration-150"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    aria-label="Toggle menu"
+                >
+                    {isMobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+                </button>
+            </div>
+
+            {isMobileMenuOpen && (
+                <div className="md:hidden border-t border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+                    {user && (
+                        <div className="flex items-center gap-2.5 px-3 py-2.5 mb-2 rounded-md bg-[var(--surface-secondary)]">
+                            <span className="ring-1 ring-[var(--border)] rounded-full">
+                                <AvatarImage name={user.name} image={user.image} />
+                            </span>
+                            <div className="min-w-0">
+                                {user.name && (
+                                    <p className="text-xs font-medium text-[var(--foreground)] truncate">{user.name}</p>
+                                )}
+                                <p className="text-[11px] text-[var(--muted)] truncate">{user.email}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <nav className="flex flex-col gap-0.5">
+                        {PATHS.map((item) => {
+                            const isActive = pathname === item.path;
+                            return (
+                                <Link
+                                    key={item.path}
+                                    href={item.path}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className={`px-3 py-2.5 rounded-md text-sm transition-colors duration-150 ${isActive
+                                        ? "bg-[var(--foreground)]/8 text-[var(--foreground)] font-medium"
+                                        : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5"
                                         }`}
                                 >
                                     {item.name}
                                 </Link>
                             );
                         })}
-                        <hr className="my-2 border-[var(--border)]" />
+                    </nav>
+
+                    <div className="mt-2 pt-2 border-t border-[var(--border)]">
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-500/10 rounded-md transition-colors duration-200 w-full text-left"
+                            className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-red-500 hover:bg-red-500/8 rounded-md transition-colors duration-150"
                         >
-                            <LogOut size={16} />
+                            <LogOut size={14} />
                             ออกจากระบบ
                         </button>
-                    </nav>
+                    </div>
                 </div>
             )}
         </header>

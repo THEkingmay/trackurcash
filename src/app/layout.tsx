@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Prompt } from "next/font/google";
 import './globals.css';
 import { Toaster } from "react-hot-toast";
-
 const prompt = Prompt({
   weight: ['300', '400', '500', '600'],
   subsets: ['latin', 'thai'],

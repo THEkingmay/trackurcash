@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken } from './libs/token.lib'
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const token = request.cookies.get("auth_token")?.value
     if (!token) {
         if (!request.nextUrl.pathname.startsWith("/auth") && request.nextUrl.pathname !== "/") {
             return NextResponse.redirect(new URL("/auth", request.url));
         }
     } else {
-        const userId = verifyToken(token)?.userId
+        const userId = (await verifyToken(token))?.userId
         if (!userId) {
             return NextResponse.redirect(new URL("/auth", request.url));
         }

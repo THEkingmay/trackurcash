@@ -1,7 +1,7 @@
 'use server'
 import { db } from "@/src/db"
 import { eq } from "drizzle-orm"
-import { users } from "@/src/db/schema"
+import { users, profiles } from "@/src/db/schema"
 import { setData, getData, deleteData } from "@/src/libs/redis.lib"
 import { sendEmail } from "@/src/libs/mail.lib"
 import { generateToken } from "@/src/libs/token.lib"
@@ -58,10 +58,19 @@ export async function verifyLogin({ loginId, code }: { loginId: string, code: st
             throw new Error("รหัสยืนยันตัวตนไม่ถูกต้อง")
         }
 
-        // ดึง uuid จากอีเมลนี้ในฐานข้อมูล ถ้าไม่มีให้สร้างใหม่
+        // ดึง uuid จากอีเมลนี้ในฐานข้อมูล ถ้าไม่มีให้สร้างใหม่ และสร้างโปรไฟล์ defalut ให้ด้วย
         let user = await db.select().from(users).where(eq(users.email, data.email))
         if (user.length === 0) {
-            user = await db.insert(users).values({ email: data.email }).returning()
+            await db.transaction(async (tx) => {
+                const [newUser] = await tx.insert(users).values({ email: data.email }).returning()
+                await tx.insert(profiles).values({
+                    userId: newUser.id,
+                    name: "บัญชีหลัก",
+                    color_code: "#000000",
+                    is_default: true,
+                })
+            })
+            user = await db.select().from(users).where(eq(users.email, data.email))
         }
         if (user.length === 0) {
             throw new Error("เกิดข้อผิดพลาดในการสร้างบัญชีผู้ใช้")

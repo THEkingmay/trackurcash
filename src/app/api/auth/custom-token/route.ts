@@ -3,7 +3,7 @@ import { authOptions } from "../[...nextauth]/route";
 import { generateToken } from "@/src/libs/token.lib";
 import { db } from "@/src/db";
 import { eq } from "drizzle-orm";
-import { users } from "@/src/db/schema";
+import { users, profiles } from "@/src/db/schema";
 import { NextResponse } from "next/server";
 // เชค  session จาก nextauth ไ้ด้ email name image 
 // ถ้าไม่มี session หรือ email ให้ส่ง error กลับไป
@@ -19,10 +19,19 @@ export async function GET() {
         const { email, name, image } = session.user
         let user = await db.select().from(users).where(eq(users.email, email))
         if (user.length === 0) {
-            const [newUser] = await db.insert(users).values({ email, name, image }).returning()
-            user = [newUser]
+            await db.transaction(async (tx) => {
+                const [newUser] = await tx.insert(users).values({ email, name, image }).returning()
+                await tx.insert(profiles).values({
+                    userId: newUser.id,
+                    name: "บัญชีหลัก",
+                    color_code: "#000000",
+                    is_default: true,
+                })
+            })
+            user = await db.select().from(users).where(eq(users.email, email))
         }
         if (user.length === 0) {
+            console.error("Failed to create user for email:", email)
             return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
         }
         const userId = user[0].id

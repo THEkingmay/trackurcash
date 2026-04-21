@@ -1,6 +1,10 @@
 import VerifyEmailLogin from "@/src/features/login/components/VerifyEmailLogin";
+import { Suspense } from "react";
+
 export default function VerifyLoginPage() {
     return (
-        <VerifyEmailLogin />
+        <Suspense fallback="Loading...">
+            <VerifyEmailLogin />
+        </Suspense>
     )
 }

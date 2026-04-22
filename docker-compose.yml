@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  web:
+    container_name: trackurcash
+    build : .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    restart: always                # ถ้า Container ค้าง ให้มัน Restart เอง
+    stdin_open: true               # เพื่อให้รับ input จาก terminal 
+    tty: true                      # เพื่อให้แสดงผลสีใน log ได้สวยงามเหมือนรันข้างนอก
+    command: pnpm dev

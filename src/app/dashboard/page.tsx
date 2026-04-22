@@ -12,7 +12,7 @@ export default function DashboardPage() {
     }
     return (
         <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-[var(--background)] text-[var(--foreground)]">
-            <h1 className="text-4xl font-bold tracking-tight">หน้าหลัก</h1>
+            <h1 className="text-4xl font-bold tracking-tight">หน้าหลักยินดีต้อนรับ</h1>
             <p className="mt-4 text-lg">
                 ยินดีต้อนรับสู่แอปจัดการเงินของคุณ! {currentProfile ? `โปรไฟล์ที่ใช้งานอยู่: ${currentProfile.name}` : "ไม่มีโปรไฟล์ที่เลือก"}
             </p>

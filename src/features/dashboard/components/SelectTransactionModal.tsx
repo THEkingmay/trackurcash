@@ -1,8 +1,9 @@
 'use client';
-import { useState, useEffect } from "react";
-import { addTransaction } from "../features/dashboard/action";
+import { Transaction } from "@/src/db/types";
 import toast from "react-hot-toast";
-import { transactionsInsertSchema } from "../db/schema";
+import { updateTransaction, deleteTransaction } from "../action";
+import { useState, useEffect } from "react";
+import { transactionsInsertSchema } from "../../../db/schema";
 import {
     X,
     Utensils,
@@ -14,11 +15,11 @@ import {
     CalendarClock
 } from "lucide-react";
 
-interface TransactionModalProps {
+interface SelectTransactionModalProps {
+    transaction: Transaction | null;
     isOpen: boolean;
     onClose: () => void;
-    profileId: string;
-    onSuccess?: () => void;
+    onSuccess: () => Promise<void>;
 }
 
 type TransactionType = "expense" | "income";
@@ -43,11 +44,10 @@ const formatLocalDateTime = (date: Date) => {
     const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-export default function AddTransactionModal({ isOpen, onClose, profileId, onSuccess }: TransactionModalProps) {
+export default function SelectTransactionModal({ transaction, isOpen, onClose, onSuccess }: SelectTransactionModalProps) {
     const [type, setType] = useState<TransactionType>("expense");
     const [category, setCategory] = useState<string>("food");
     const [amount, setAmount] = useState<string>("");
@@ -56,29 +56,35 @@ export default function AddTransactionModal({ isOpen, onClose, profileId, onSucc
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
 
     useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-
-            setType("expense");
-            setCategory("food");
-            setAmount("");
-            setDescription("");
-            setCreatedAt(new Date());
+        if (transaction && isOpen) {
+            setType(transaction.type as TransactionType);
+            setCategory(transaction.category);
+            setAmount(String(transaction.amount));
+            setDescription(transaction.description || "");
+            setCreatedAt(new Date(transaction.createdAt));
             setShowDatePicker(false);
+            document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
         }
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen]);
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [transaction, isOpen]);
+
+    if (!transaction || !isOpen) return null;
 
     const handleTypeChange = (newType: TransactionType) => {
         setType(newType);
         setCategory(CATEGORY_MAP[newType][0].id);
     };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const isDataChanged =
+        type !== transaction.type ||
+        category !== transaction.category ||
+        Number(amount) !== transaction.amount ||
+        description !== (transaction.description || "") ||
+        createdAt.getTime() !== new Date(transaction.createdAt).getTime();
+
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (!amount || Number(amount) <= 0) {
@@ -87,50 +93,73 @@ export default function AddTransactionModal({ isOpen, onClose, profileId, onSucc
         }
 
         const transactionData = {
-            profileId,
+            ...transaction,
             type,
             category,
             amount: Number(amount),
             description: description.trim() || undefined,
-            createdAt
+            createdAt,
+            updatedAt: new Date()
         };
+
         const parseResult = transactionsInsertSchema.safeParse(transactionData);
         if (!parseResult.success) {
             console.error("Validation error:", parseResult.error);
             toast.error("ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง");
             return;
         }
-        console.log("Validation successful, parsed data:", parseResult.data);
 
         try {
             await toast.promise(
-                addTransaction(parseResult.data), {
-                loading: "กำลังบันทึก...",
-                success: "บันทึกรายการสำเร็จ!",
-                error: "เกิดข้อผิดพลาดในการบันทึก"
+                updateTransaction(parseResult.data), {
+                loading: "กำลังอัปเดต...",
+                success: "อัปเดตรายการสำเร็จ!",
+                error: "เกิดข้อผิดพลาดในการอัปเดต"
             });
-            onSuccess?.();
+            await onSuccess();
             onClose();
         } catch (error) {
-            console.error("Submit error:", error);
+            console.error("Update error:", error);
         }
     };
 
-    if (!isOpen) return null;
+    const handleDelete = async () => {
+        if (!window.confirm(`ต้องการลบรายการนี้ใช่หรือไม่?`)) return;
+        try {
+            await toast.promise(
+                deleteTransaction(transaction.id), {
+                loading: "กำลังลบ...",
+                success: "ลบรายการสำเร็จ!",
+                error: "เกิดข้อผิดพลาดในการลบ"
+            });
+            await onSuccess();
+            onClose();
+        } catch (error) {
+            console.error("Delete error:", error);
+        }
+    };
 
     const currentCategories = CATEGORY_MAP[type];
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
-            <div className="bg-[var(--surface)] p-6 rounded-2xl w-full max-w-md shadow-xl border border-[var(--border)] animate-in fade-in zoom-in-95 duration-200 max-h-[95vh] overflow-y-auto">
+        <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all"
+        >
+            <div
+                className="bg-[var(--surface)] p-6 rounded-2xl w-full max-w-md shadow-xl border border-[var(--border)] animate-in fade-in zoom-in-95 duration-200 max-h-[95vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold text-[var(--foreground)] tracking-tight">เพิ่มรายการใหม่</h2>
-                    <button onClick={onClose} className="p-2 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-secondary)] rounded-full transition-colors outline-none">
+                    <h2 className="text-xl font-semibold text-[var(--foreground)] tracking-tight">แก้ไขรายการ</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-secondary)] rounded-full transition-colors outline-none"
+                    >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSave} className="space-y-6">
                     <div className="flex p-1 bg-[var(--surface-secondary)] rounded-xl">
                         <button
                             type="button"
@@ -209,13 +238,10 @@ export default function AddTransactionModal({ isOpen, onClose, profileId, onSucc
                                     <label className="block text-sm font-medium text-[var(--foreground)]">ระบุวันและเวลา</label>
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setCreatedAt(new Date());
-                                            setShowDatePicker(false);
-                                        }}
+                                        onClick={() => setShowDatePicker(false)}
                                         className="text-xs text-[var(--muted)] hover:text-[var(--foreground)] underline underline-offset-2"
                                     >
-                                        กลับไปใช้เวลาปัจจุบัน
+                                        ยุบ
                                     </button>
                                 </div>
                                 <input
@@ -229,7 +255,9 @@ export default function AddTransactionModal({ isOpen, onClose, profileId, onSucc
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-[var(--foreground)] mb-2">บันทึกช่วยจำ <span className="text-[var(--muted)] font-normal text-xs">(ไม่จำเป็น)</span></label>
+                        <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                            บันทึกช่วยจำ <span className="text-[var(--muted)] font-normal text-xs">(ไม่จำเป็น)</span>
+                        </label>
                         <input
                             type="text"
                             value={description}
@@ -239,15 +267,26 @@ export default function AddTransactionModal({ isOpen, onClose, profileId, onSucc
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        className={`w-full py-3.5 px-4 rounded-xl text-white font-medium transition-all focus:ring-4 focus:ring-opacity-50 ${type === 'expense'
-                            ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500'
-                            : 'bg-emerald-500 hover:bg-emerald-600 focus:ring-emerald-500'
-                            }`}
-                    >
-                        บันทึก{type === 'expense' ? 'รายจ่าย' : 'รายรับ'}
-                    </button>
+                    <div className="flex flex-col gap-2">
+                        <button
+                            type="submit"
+                            disabled={!isDataChanged}
+                            className={`w-full py-3.5 px-4 rounded-xl text-white font-medium transition-all focus:ring-4 focus:ring-opacity-50 disabled:opacity-40 disabled:cursor-not-allowed ${type === 'expense'
+                                ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500'
+                                : 'bg-emerald-500 hover:bg-emerald-600 focus:ring-emerald-500'
+                                }`}
+                        >
+                            บันทึกการแก้ไข
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleDelete}
+                            className="w-full py-2.5 text-sm text-red-400 hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-colors"
+                        >
+                            ลบรายการนี้
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

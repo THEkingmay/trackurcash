@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, uuid, text, timestamp, boolean, integer, uniqueIndex } from "drizzle-orm/pg-core";
 import { createSelectSchema, createUpdateSchema, createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -30,7 +30,9 @@ export const profiles = pgTable("profiles", {
     is_default: boolean("is_default").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+    profilesUserIdNameUnique: uniqueIndex("profiles_user_id_name_unique").on(table.userId, table.name),
+}));
 export const profilesSelectSchema = createSelectSchema(profiles);
 export const profilesInsertSchema = createInsertSchema(profiles);
 export const profilesUpdateSchema = createUpdateSchema(profiles, {

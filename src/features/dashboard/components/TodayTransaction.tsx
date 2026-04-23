@@ -1,7 +1,8 @@
 import { useEffect, useState, Dispatch, SetStateAction } from "react";
 import { Transaction } from "@/src/db/types";
-import AddTransactionModal from "@/src/components/AddTransactionModal";
+import AddTransactionModal from "@/src/features/dashboard/components/AddTransactionModal";
 import Button from "@/src/components/Button";
+import SelectTransactionModal from "./SelectTransactionModal";
 import {
     CalendarDays,
     Plus,
@@ -47,6 +48,7 @@ export default function TodayTransaction({ currentDate, currentProfileId, setSel
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
     useEffect(() => {
         if (!currentProfileId) return;
@@ -111,6 +113,7 @@ export default function TodayTransaction({ currentDate, currentProfileId, setSel
 
                         return (
                             <li
+                                onClick={() => setSelectedTransaction(transaction)}
                                 key={transaction.id}
                                 className="group flex justify-between items-center p-4 bg-transparent hover:bg-[var(--surface-secondary)] border border-[var(--border)] rounded-xl transition-all duration-200"
                             >
@@ -140,6 +143,12 @@ export default function TodayTransaction({ currentDate, currentProfileId, setSel
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 profileId={currentProfileId}
+                onSuccess={() => fetchTransactions()}
+            />
+            <SelectTransactionModal
+                transaction={selectedTransaction!}
+                isOpen={!!selectedTransaction}
+                onClose={() => setSelectedTransaction(null)}
                 onSuccess={() => fetchTransactions()}
             />
         </div>

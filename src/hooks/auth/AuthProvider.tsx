@@ -33,7 +33,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
 
-
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 

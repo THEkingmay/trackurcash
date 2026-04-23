@@ -1,6 +1,6 @@
 {
-  "id": "eea4e622-07b1-4a67-b22b-7b39009f14f4",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "e7cb3537-2b2b-4508-9f6a-1b948c5e3156",
+  "prevId": "eea4e622-07b1-4a67-b22b-7b39009f14f4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -227,7 +227,8 @@
         "transportation",
         "entertainment",
         "utilities",
-        "other"
+        "other",
+        "salary"
       ]
     },
     "public.transaction_type": {

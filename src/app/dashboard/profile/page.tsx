@@ -1,6 +1,6 @@
-import ProfileMainDisplay from "@/src/features/profile/components/ProfileMainDisplay"
+import ProfileContainer from "@/src/features/profile/components/ProfileContainer"
 export default function ProfilePage() {
     return (
-        <ProfileMainDisplay />
+        <ProfileContainer />
     )
 }

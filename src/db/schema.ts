@@ -1,6 +1,10 @@
-import { pgTable, uuid, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, uuid, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 import { createSelectSchema, createUpdateSchema, createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+
+export const transactionTypeEnum = pgEnum("transaction_type", ["income", "expense"]);
+export const transactionCategoryEnum = pgEnum("transaction_category", ["food", "transportation", "entertainment", "utilities", "other", "salary"]);
 
 export const users = pgTable("users", {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -37,4 +41,27 @@ export const profilesUpdateSchema = createUpdateSchema(profiles, {
     name: z.string(),
     color_code: z.string(),
     is_default: z.boolean(),
+});
+
+export const transactions = pgTable("transactions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    profileId: uuid("profile_id").references(() => profiles.id).notNull(),
+    type: transactionTypeEnum("type").notNull(),
+    category: transactionCategoryEnum("category").notNull(),
+    amount: integer("amount").notNull(),
+    description: text("description"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+export const transactionsSelectSchema = createSelectSchema(transactions);
+export const transactionsInsertSchema = createInsertSchema(transactions);
+export const transactionsUpdateSchema = createUpdateSchema(transactions, {
+    id: z.string(),
+    profileId: z.string(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
+    type: z.enum(["income", "expense"]),
+    category: z.enum(["food", "transportation", "entertainment", "utilities", "other", "salary"]),
+    amount: z.number(),
+    description: z.string().optional(),
 });

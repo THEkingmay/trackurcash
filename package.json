@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "db:seed:transaction": "pnpm dlx tsx --env-file=.env.local src/db/seed/transaction.ts"
   },
   "dependencies": {
     "@upstash/redis": "^1.37.0",

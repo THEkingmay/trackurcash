@@ -4,7 +4,7 @@ import { cookies } from "next/headers"
 import { verifyToken } from "@/src/libs/token.lib";
 import { db } from "@/src/db";
 import { users, profiles } from "@/src/db/schema";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 export async function getCurrentUserData() {
     try {
         const cookieStore = await cookies()
@@ -44,7 +44,7 @@ export async function getUserProfiles() {
             return null
         }
         const userId = payload.userId
-        const userProfiles = await db.select().from(profiles).where(eq(profiles.userId, userId))
+        const userProfiles = await db.select().from(profiles).where(eq(profiles.userId, userId)).orderBy(asc(profiles.createdAt))
         return userProfiles
     } catch (error) {
         console.error("Error fetching user profiles:", error)

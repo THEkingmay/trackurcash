@@ -6,7 +6,7 @@ import { useAuth } from "@/src/hooks/auth/AuthProvider";
 import { createProfile } from "../action";
 import toast from "react-hot-toast";
 
-export default function ProfileMainDisplay() {
+export default function ProfileContainer() {
     const { user, profiles, setProfiles } = useAuth()
 
     const handleCreateProfile = async () => {
@@ -34,19 +34,21 @@ export default function ProfileMainDisplay() {
         }
     }
     return (
-        <div className="flex flex-col gap-6">
-            {user && <UserDataCard user={user} />}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {profiles && profiles.map(profile => (
-                    <ProfileCard key={profile.id} profile={profile} />
-                ))}
+        <main className="bg-[var(--background)] text-[var(--foreground)]  py-8 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-6">
+                {user && <UserDataCard user={user} />}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {profiles && profiles.map(profile => (
+                        <ProfileCard key={profile.id} profile={profile} />
+                    ))}
+                </div>
+                <div>
+                    {/* Future: Add "Create New Profile" button here */}
+                    <button onClick={handleCreateProfile} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Create New Profile
+                    </button>
+                </div>
             </div>
-            <div>
-                {/* Future: Add "Create New Profile" button here */}
-                <button onClick={handleCreateProfile} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Create New Profile
-                </button>
-            </div>
-        </div>
+        </main>
     )
 }

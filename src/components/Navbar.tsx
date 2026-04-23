@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { logout } from "../features/login/action";
-import { LogOut, Menu, X, User, ChevronDown, Home, ChartAreaIcon } from "lucide-react";
+import { LogOut, User, ChevronDown, Home, ChartAreaIcon } from "lucide-react"; // ลบ Menu, X ออกเพราะไม่ได้ใช้แล้ว
 import { useAuth } from "@/src/hooks/auth/AuthProvider";
 import Image from "next/image";
 
@@ -20,11 +20,11 @@ function NavSkeleton() {
             <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
                 <div className="h-4 w-32 rounded-full bg-[var(--foreground)]/8 animate-pulse" />
 
-                <div className="hidden md:flex items-center gap-2">
+                {/* ปรับให้ Skeleton แสดงเป็นวงกลม Avatar ในทุกขนาดหน้าจอ */}
+                <div className="flex items-center gap-2">
                     <div className="h-7 w-7 rounded-full bg-[var(--foreground)]/8 animate-pulse" />
-                    <div className="h-3 w-16 rounded-full bg-[var(--foreground)]/8 animate-pulse" />
+                    <div className="hidden lg:block h-3 w-16 rounded-full bg-[var(--foreground)]/8 animate-pulse" />
                 </div>
-                <div className="md:hidden h-8 w-8 rounded-md bg-[var(--foreground)]/8 animate-pulse" />
             </div>
         </header>
     );
@@ -39,6 +39,7 @@ function AvatarImage({ name, image }: { name?: string | null; image?: string | n
                 src={image}
                 alt={name ?? "User"}
                 onError={() => setImgError(true)}
+                referrerPolicy="no-referrer"
                 className="h-7 w-7 rounded-full object-cover"
             />
         );
@@ -144,13 +145,10 @@ function AvatarDropdown({ user, onLogout }: {
 }
 
 export default function Navbar() {
-    const pathname = usePathname();
     const router = useRouter();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { loading, user } = useAuth();
 
     const handleLogout = async () => {
-        setIsMobileMenuOpen(false);
         await logout();
         router.push("/auth");
         router.refresh();
@@ -170,72 +168,19 @@ export default function Navbar() {
                         <Image
                             src={'/img02.png'}
                             alt="Logo"
-                            width={50}
-                            height={50}
+                            width={32}
+                            height={32}
                         />
-                        <span>Track Your Cash</span>
+                        <span className="hidden sm:block">Track Your Cash</span>
                     </div>
                 </Link>
 
-                <div className="hidden md:flex items-center">
+                {/* เอา hidden md:flex ออก เพื่อให้ AvatarDropdown แสดงผลในทุกขนาดหน้าจอ */}
+                <div className="flex items-center">
                     {user && <AvatarDropdown user={user} onLogout={handleLogout} />}
                 </div>
 
-                <button
-                    className="md:hidden flex items-center justify-center h-8 w-8 rounded-md text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/8 transition-all duration-150"
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    aria-label="Toggle menu"
-                >
-                    {isMobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
-                </button>
             </div>
-
-            {isMobileMenuOpen && (
-                <div className="md:hidden border-t border-[var(--border)] bg-[var(--surface)] px-4 py-3">
-                    {user && (
-                        <div className="flex items-center gap-2.5 px-3 py-2.5 mb-2 rounded-md bg-[var(--surface-secondary)]">
-                            <span className="ring-1 ring-[var(--border)] rounded-full">
-                                <AvatarImage name={user.name} image={user.image} />
-                            </span>
-                            <div className="min-w-0">
-                                {user.name && (
-                                    <p className="text-xs font-medium text-[var(--foreground)] truncate">{user.name}</p>
-                                )}
-                                <p className="text-[11px] text-[var(--muted)] truncate">{user.email}</p>
-                            </div>
-                        </div>
-                    )}
-
-                    <nav className="flex flex-col gap-0.5">
-                        {PATHS.map((item) => {
-                            const isActive = pathname === item.path;
-                            return (
-                                <Link
-                                    key={item.path}
-                                    href={item.path}
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className={`px-3 py-2.5 rounded-md text-sm transition-colors duration-150 ${isActive
-                                        ? "bg-[var(--foreground)]/8 text-[var(--foreground)] font-medium"
-                                        : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5"
-                                        }`}
-                                >
-                                    {item.name}
-                                </Link>
-                            );
-                        })}
-                    </nav>
-
-                    <div className="mt-2 pt-2 border-t border-[var(--border)]">
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-red-500 hover:bg-red-500/8 rounded-md transition-colors duration-150"
-                        >
-                            <LogOut size={14} />
-                            ออกจากระบบ
-                        </button>
-                    </div>
-                </div>
-            )}
         </header>
     );
 }

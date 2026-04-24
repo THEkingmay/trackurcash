@@ -4,28 +4,23 @@ import { db } from "@/src/db"
 import { eq, and, gte, lte, asc } from "drizzle-orm"
 import { NewTransaction, UpdateTransaction } from "@/src/db/types";
 import { transactionsUpdateSchema } from "@/src/db/schema";
+import { date } from "drizzle-orm/singlestore-core/columns/date";
 
-export async function getTransactionsByDate({ date, profileId }: { date: string | Date, profileId: string }) {
+export async function getTransactionsByDate({ startDate, endDate, profileId }: { startDate: Date, endDate: Date, profileId: string }) {
     try {
-        if (!date || !profileId) {
-            throw new Error("Date and profileId are required")
+        if (!startDate || !endDate || !profileId) {
+            throw new Error("Start date, end date, and profileId are required")
         }
 
-        const targetDate = new Date(date);
-
-        const startOfDay = new Date(targetDate);
-        startOfDay.setHours(0, 0, 0, 0);
-
-        const endOfDay = new Date(targetDate);
-        endOfDay.setHours(23, 59, 59, 999);
+        console.log("Fetching transactions for profileId:", profileId, "from", startDate, "to", endDate);
 
         const transactionsData = await db.select()
             .from(transactions)
             .where(
                 and(
                     eq(transactions.profileId, profileId),
-                    gte(transactions.createdAt, startOfDay),
-                    lte(transactions.createdAt, endOfDay)
+                    gte(transactions.createdAt, startDate),
+                    lte(transactions.createdAt, endDate)
                 )
             ).orderBy(asc(transactions.createdAt));
 

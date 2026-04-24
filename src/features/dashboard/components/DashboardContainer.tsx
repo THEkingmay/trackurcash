@@ -14,10 +14,19 @@ export default function DashboardContainer() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
     const fetchTransactions = async () => {
+        const startOfDay = new Date(selectedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        // Client จะได้เวลา 00:00 น. ของไทย
+
+        const endOfDay = new Date(selectedDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        // Client จะได้เวลา 23:59 น. ของไทย
+
         if (!currentProfile) return;
         try {
             const transactionsData = await getTransactionsByDate({
-                date: selectedDate,
+                startDate: startOfDay,
+                endDate: endOfDay,
                 profileId: currentProfile?.id
             });
             setTransactions(transactionsData);
@@ -31,9 +40,7 @@ export default function DashboardContainer() {
                 <UserHeader loading={loading} user={user} profiles={profiles} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                <div className="w-full md:col-span-1">
-                    <TodaySummary currentDate={selectedDate} transactions={transactions} />
-                </div>
+
                 <div className="w-full md:col-span-2">
                     <TodayTransaction
                         currentDate={selectedDate}
@@ -42,6 +49,9 @@ export default function DashboardContainer() {
                         fetchTransactions={fetchTransactions}
                         transactions={transactions}
                     />
+                </div>
+                <div className="w-full md:col-span-1">
+                    <TodaySummary currentDate={selectedDate} transactions={transactions} />
                 </div>
             </div>
         </main>
